@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef6fc">
+  <title>분자 구조 랜덤 뽑기</title>
+  <style>
+    :root { color-scheme: light; font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: #18334f; background: #f2f7fc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; min-height: 100svh; background: radial-gradient(ellipse at 15% 10%, #e0efff, transparent 50%), radial-gradient(ellipse at 90% 80%, #e0f6ef, transparent 45%), #f5f9fd; }
+    main { max-width: 960px; margin: auto; padding: 58px 24px 36px; text-align: center; }
+    .lab-tag { display: inline-flex; align-items: center; gap: 9px; padding: 9px 16px; border: 1px solid #ccdfec; border-radius: 30px; background: #ffffffb3; color: #426580; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+    .lab-tag::before { content: ""; width: 7px; height: 7px; background: #21af94; border-radius: 50%; }
+    h1 { margin: 22px 0 13px; font-size: clamp(28px, 5vw, 44px); letter-spacing: -2px; line-height: 1.3; }
+    .subtitle { margin: 0; color: #5b7289; font-size: clamp(14px, 2.4vw, 17px); line-height: 1.7; word-break: keep-all; }
+    .selection { display: grid; grid-template-columns: 1fr 52px 1fr; align-items: center; margin: 42px auto 28px; max-width: 780px; }
+    .card { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; padding: 30px 16px; border: 1px solid #d7e5f2; border-radius: 26px; background: #fff; box-shadow: 0 12px 36px #274c7010; transition: border-color .25s, box-shadow .25s, transform .25s; }
+    .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: #6aa9ef; }
+    .card.second { background: #fcfffe; border-color: #d1e9e2; }
+    .card.second::before { background: #62c8ae; }
+    .card-number { position: absolute; top: 19px; left: 22px; font-size: 12px; color: #89a0b6; font-weight: 700; letter-spacing: 1px; }
+    .orbit { position: absolute; width: 115px; height: 115px; border: 1px solid #e8f0f8; border-radius: 50%; right: -38px; bottom: -38px; }
+    .orbit::after { content: ""; position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #d8e8f8; top: 8px; left: 12px; }
+    .second .orbit { border-color: #e1f3ec; }
+    .second .orbit::after { background: #ccece1; }
+    .card h2 { margin: 8px 0 21px; font-size: 14px; font-weight: 600; color: #5d7790; }
+    .formula { display: flex; align-items: baseline; justify-content: center; min-height: 88px; font-family: Arial, sans-serif; font-size: clamp(52px, 7vw, 72px); font-weight: 700; letter-spacing: -2px; line-height: 1.2; color: #285c9c; }
+    .formula sub { font-size: .55em; line-height: 0; position: relative; bottom: -.2em; }
+    .second .formula { color: #188b75; }
+    .card.waiting .formula { color: #b5c8db; }
+    .second.waiting .formula { color: #accfc4; }
+    .plus { font-size: 30px; font-weight: 300; color: #90a8bf; }
+    .card.selected { border-color: #79ace9; box-shadow: 0 12px 36px #3273bd1a; }
+    .card.second.selected { border-color: #6ac4ac; box-shadow: 0 12px 36px #16977815; }
+    .card.reveal { animation: reveal .4s ease-out; }
+    .drawing .formula { opacity: .65; }
+    @keyframes reveal { from { transform: translateY(5px); } to { transform: translateY(0); } }
+    button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-width: 220px; min-height: 60px; padding: 16px 34px; border: 0; border-radius: 16px; background: #2869b6; color: white; box-shadow: 0 7px 18px #2869b62b; font: 700 18px/1.4 inherit; font-family: inherit; font-size: 18px; font-weight: 700; cursor: pointer; transition: background .2s, transform .2s; touch-action: manipulation; }
+    button:hover:not(:disabled) { background: #1e579a; transform: translateY(-2px); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:focus-visible { outline: 3px solid #168c78; outline-offset: 5px; }
+    button:disabled { cursor: wait; opacity: .65; }
+    .status { min-height: 26px; margin: 18px 0 30px; color: #60788e; font-size: 14px; line-height: 1.8; }
+    .guide { max-width: 780px; margin: auto; padding: 22px 24px; border: 1px solid #dbe6ee; border-radius: 18px; background: #ffffff80; }
+    .guide p { margin: 0; font-size: 13px; line-height: 1.9; color: #667e92; word-break: keep-all; }
+    .guide strong { color: #35546e; }
+    .molecules { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; }
+    .molecules span { padding: 5px 10px; border: 1px solid #e0eaf2; border-radius: 8px; background: #fff; color: #577188; font: 13px/1.5 Arial, sans-serif; }
+    footer { margin-top: 25px; color: #8195a7; font-size: 12px; }
+    @media (max-width: 560px) { main { padding: 28px 18px; } h1 { letter-spacing: -1.2px; } .selection { grid-template-columns: 1fr; gap: 10px; margin: 28px auto 24px; max-width: 360px; } .card { min-height: 190px; padding: 25px 16px 18px; border-radius: 22px; } .card h2 { margin: 4px 0 13px; } .formula { min-height: 72px; font-size: 58px; } .plus { line-height: 1; font-size: 24px; } .status { margin-bottom: 22px; } .guide { padding: 18px 14px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="lab-tag">CHEMISTRY LAB</div>
+      <h1>분자 구조 랜덤 뽑기</h1>
+      <p class="subtitle">버튼을 눌러 오늘 탐구할 두 가지 분자를 확인하세요!</p>
+    </header>
+    <section class="selection" aria-label="추첨된 두 분자" aria-busy="false">
+      <article class="card waiting">
+        <span class="card-number" aria-hidden="true">01</span>
+        <h2>첫 번째 분자</h2>
+        <div class="formula" id="first" aria-label="추첨 전">?</div>
+        <span class="orbit" aria-hidden="true"></span>
+      </article>
+      <span class="plus" aria-hidden="true">+</span>
+      <article class="card second waiting">
+        <span class="card-number" aria-hidden="true">02</span>
+        <h2>두 번째 분자</h2>
+        <div class="formula" id="second" aria-label="추첨 전">?</div>
+        <span class="orbit" aria-hidden="true"></span>
+      </article>
+    </section>
+    <button type="button" id="draw">🎲 분자 뽑기</button>
+    <p class="status" id="status" role="status" aria-live="polite" aria-atomic="true">어떤 분자들을 만나게 될까요?</p>
+    <aside class="guide" aria-label="탐구 안내">
+      <p><strong>오늘의 탐구</strong> · 루이스 전자점식, 분자 구조, 결합각, 극성을 살펴보세요.</p>
+      <p>11가지 분자 · 지정된 4개 조합 제외 · 51가지 조합에서 공정하게 추첨</p>
+      <div class="molecules" id="molecule-list" aria-label="추첨 대상 분자"></div>
+    </aside>
+    <footer>두 가지 분자, 새로운 발견의 시작</footer>
+  </main>
+  <script>
+    'use strict';
+    // 모든 표시에 사용하는 유일한 분자 목록. 숫자는 sub 태그로 렌더링한다.
+    const molecules = ['CH4', 'CF4', 'OF2', 'H2O', 'CO2', 'BeF2', 'BF3', 'NH3', 'NF3', 'HCN', 'FCN'];
+    const forbiddenPairs = [['CH4', 'CF4'], ['OF2', 'H2O'], ['NH3', 'NF3'], ['HCN', 'FCN']];
+    const pairKey = (a, b) => [a, b].sort().join('|');
+    const forbiddenKeys = new Set(forbiddenPairs.map(([a, b]) => pairKey(a, b)));
+    const validPairs = [];
+    // i < j로 동일 분자와 순서만 반대인 중복 조합을 제외한다.
+    // 11C2 = 55에서 지정된 4개만 제외하므로 CO2 + BeF2도 포함된다.
+    for (let i = 0; i < molecules.length; i++) {
+      for (let j = i + 1; j < molecules.length; j++) {
+        if (!forbiddenKeys.has(pairKey(molecules[i], molecules[j]))) {
+          validPairs.push([molecules[i], molecules[j]]);
+        }
+      }
+    }
+    if (validPairs.length !== 51) throw new Error('유효 조합은 정확히 51개여야 합니다.');
+    const formulaHTML = formula => formula.replace(/(\d+)/g, '<sub>$1</sub>');
+    const readableFormula = formula => formula.replace(/\d/g, digit => '₀₁₂₃₄₅₆₇₈₉'[Number(digit)]);
+    const fields = [document.getElementById('first'), document.getElementById('second')];
+    const cards = Array.from(document.querySelectorAll('.card'));
+    const selection = document.querySelector('.selection');
+    const button = document.getElementById('draw');
+    const status = document.getElementById('status');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let drawing = false;
+    let animationTimer = null;
+    let finishTimer = null;
+    let pendingPair = null;
+    document.getElementById('molecule-list').innerHTML = molecules.map(formula => '<span>' + formulaHTML(formula) + '</span>').join('');
+
+    function showPair(pair) {
+      fields.forEach((field, index) => {
+        field.innerHTML = formulaHTML(pair[index]);
+        field.setAttribute('aria-label', readableFormula(pair[index]));
+      });
+    }
+    function finishDraw() {
+      if (!drawing) return;
+      clearInterval(animationTimer);
+      clearTimeout(finishTimer);
+      showPair(pendingPair);
+      cards.forEach(card => {
+        card.classList.remove('drawing');
+        card.classList.add('selected', 'reveal');
+      });
+      selection.setAttribute('aria-busy', 'false');
+      status.textContent = readableFormula(pendingPair[0]) + ' + ' + readableFormula(pendingPair[1]) + ' · 오늘 탐구할 분자가 정해졌어요!';
+      button.textContent = '🔄 다시 뽑기';
+      button.disabled = false;
+      drawing = false;
+    }
+    button.addEventListener('click', () => {
+      if (drawing) return;
+      drawing = true;
+      button.disabled = true;
+      button.textContent = '추첨 중…';
+      selection.setAttribute('aria-busy', 'true');
+      status.textContent = '오늘의 분자를 뽑고 있어요…';
+      cards.forEach(card => {
+        card.classList.remove('waiting', 'selected', 'reveal');
+        card.classList.add('drawing');
+      });
+      // 51개 조합의 각 인덱스는 같은 확률로 선택된다. 이전 결과도 재선택 가능하다.
+      pendingPair = validPairs[Math.floor(Math.random() * validPairs.length)].slice();
+      // 카드 위치도 무작위로 바꾸되, 선택된 조합 자체의 확률은 바꾸지 않는다.
+      if (Math.random() < 0.5) pendingPair.reverse();
+      if (reducedMotion.matches) { finishDraw(); return; }
+      // 연출에도 목록의 분자만 사용하며 유효한 조합을 표시한다.
+      const animate = () => showPair(validPairs[Math.floor(Math.random() * validPairs.length)]);
+      animate();
+      animationTimer = setInterval(animate, 85);
+      finishTimer = setTimeout(finishDraw, 1250);
+    });
+    // 추첨 도중 모션 감소 설정이 켜져도 즉시 결과를 표시한다.
+    if (reducedMotion.addEventListener) {
+      reducedMotion.addEventListener('change', event => { if (event.matches) finishDraw(); });
+    }
+  </script>
+</body>
+</html>
